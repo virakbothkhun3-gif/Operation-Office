@@ -33,24 +33,26 @@ export function formatNewRequestTelegramMessage(req: MerchantRequest): string {
     hour12: true,
   });
 
-  const googleMapLine = req.googleMap && req.googleMap.trim()
-    ? `🗺️ Google Map: ${req.googleMap.trim()}\n`
-    : '🗺️ Google Map:\n';
+  const mapValue = req.googleMap && req.googleMap.trim() ? req.googleMap.trim() : 'N/A';
+  const midLine = req.mid && req.mid.trim() ? `-MID : ${req.mid.trim()}` : '-MID ';
+  const tidLine = req.tid && req.tid.trim() ? `-TID: ${req.tid.trim()}` : '-TID: ';
 
-  return `NEW MERCHANT INTEGRATION REQUEST
-Merchant Company: ${req.merchantName}
-Merchant Outlet: ${req.outletName}
-POS S/N: ${req.serialNumber}
-MID / TID: ${req.mid} / ${req.tid}
-Integration Type: ${req.integrationType}
-Merchant Business: ${req.businessType}
+  return `📞NEW MERCHANT INTEGRATION REQUEST
+
+ -Merchant Company : ${req.merchantName}
+-Merchant Outlet: ${req.outletName}
+-POS S/N : ${req.serialNumber}
+${midLine}
+${tidLine}
+-Integration Type: ${req.integrationType}
+-Merchant Business: ${req.businessType}
 👤 Contact Person: ${contactStr}
-Address: ${req.address}
-${googleMapLine}👨‍💼 Assigned Staff: ${staffStr}
-Current Status: ${req.status}
-Remarks: ${remarksStr}
-Logged At: ${loggedTime}
-Internal Only`;
+-Address: ${req.address}
+🗺️ Google Map: ${mapValue}
+👨‍💼 Assigned Staff: ${staffStr}
+-Current Status: ${req.status}
+-Remarks: ${remarksStr}
+-Logged At: ${loggedTime}`;
 }
 
 /**

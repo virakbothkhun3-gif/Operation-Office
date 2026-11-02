@@ -284,21 +284,22 @@ Internal Only`;
                 EXACT NOTIFICATION FORMAT DELIVERED TO TELEGRAM GROUP:
               </p>
               <div className="bg-[#0f0f11] text-[#f0f0f2] font-mono text-xs p-4 rounded-lg overflow-x-auto whitespace-pre leading-relaxed border border-[rgba(240,240,242,0.08)] select-all">
-{`NEW MERCHANT INTEGRATION REQUEST
-Merchant Company: KHUN Virakboth
-Merchant Outlet: VB Coffee
-POS S/N: WP555555Q55555
-MID / TID: 55555555555 / 555555
-Integration Type: Serial Port
-Merchant Business: F&B / Restaurant & Cafe
-👤 Contact Person: Mr.Vibol (012 5555 55)
-Address: Phnom Penh
-🗺️ Google Map: https://maps.app.goo.gl/phnompenh
+{`📞NEW MERCHANT INTEGRATION REQUEST
+
+ -Merchant Company : COFFEE CONCEPTS (CAMBODIA) LIMITED
+-Merchant Outlet: STARBUCKS 313 QUAYSIDE
+-POS S/N : SN555555Q2222
+-MID 
+-TID: 
+-Integration Type: IP
+-Merchant Business: F&B / Restaurant & Cafe
+👤 Contact Person: Seth Daka (012345678)
+-Address: HKL Ounalom River Side Mall, Preah Sisowath Quay, Village 1, PP
+🗺️ Google Map: N/A
 👨‍💼 Assigned Staff: Nget Monioudom (Staff ID: 222222)
-Current Status: New
-Remarks: Merchant Request Completed Set within Today.
-Logged At: 11/1/2026, 11:21:05 AM
-Internal Only`}
+-Current Status: New
+-Remarks: Please adding POS stand and USB too
+-Logged At: 11/2/2026, 1:50:06 PM`}
               </div>
             </div>
           )}

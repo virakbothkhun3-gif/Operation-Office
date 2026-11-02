@@ -1,12 +1,46 @@
 import { MerchantRequest, TelegramConfig, TelegramDeliveryLog, UserProfile } from '../types';
 import { DEFAULT_TELEGRAM_CONFIG } from './telegram';
 
-const STORAGE_KEY_REQUESTS = 'system_integration_requests_v3';
+const STORAGE_KEY_REQUESTS = 'system_integration_requests_v4';
 const STORAGE_KEY_TELEGRAM_CONFIG = 'system_integration_telegram_cfg_v1';
 const STORAGE_KEY_TELEGRAM_LOGS = 'system_integration_telegram_logs_v1';
 const STORAGE_KEY_CURRENT_USER = 'system_integration_active_user_v1';
 
 export const INITIAL_REQUESTS: MerchantRequest[] = [
+  {
+    id: 'REQ-2026-098',
+    merchantName: 'COFFEE CONCEPTS (CAMBODIA) LIMITED',
+    outletName: 'STARBUCKS 313 QUAYSIDE',
+    serialNumber: 'SN555555Q2222',
+    mid: '',
+    tid: '',
+    address: 'HKL Ounalom River Side Mall, Preah Sisowath Quay, Village 1, PP',
+    googleMap: 'N/A',
+    businessType: 'F&B / Restaurant & Cafe',
+    contactPerson: 'Seth Daka',
+    phoneNumber: '012345678',
+    integrationType: 'IP',
+    assignedStaff: 'Nget Monioudom',
+    staffId: '222222',
+    status: 'New',
+    isPosTerminalUat: false,
+    posTerminalUatStatus: 'Not Applicable',
+    posModel: 'IP POS Terminal',
+    remarks: 'Please adding POS stand and USB too',
+    createdAt: '2026-11-02T13:50:06.000Z',
+    updatedAt: '2026-11-02T13:50:06.000Z',
+    statusLogs: [
+      {
+        id: 'LOG-098',
+        previousStatus: 'New',
+        newStatus: 'New',
+        person: 'Nget Monioudom',
+        staffId: '222222',
+        timestamp: '2026-11-02T13:50:06.000Z',
+        remarks: 'Please adding POS stand and USB too',
+      },
+    ],
+  },
   {
     id: 'REQ-2026-099',
     merchantName: 'KHUN Virakboth',

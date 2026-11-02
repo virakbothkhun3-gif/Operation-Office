@@ -41,27 +41,27 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({
   const [businessType, setBusinessType] = useState('F&B / Restaurant & Cafe');
   const [contactPerson, setContactPerson] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [integrationType, setIntegrationType] = useState<IntegrationType>('Serial Port');
+  const [integrationType, setIntegrationType] = useState<IntegrationType>('IP');
   const [assignedStaff, setAssignedStaff] = useState(() => currentUser?.name || 'Nget Monioudom');
   const [staffId, setStaffId] = useState(() => currentUser?.staffId || '222222');
-  const [remarks, setRemarks] = useState('Merchant Request Completed Set within Today.');
+  const [remarks, setRemarks] = useState('Please adding POS stand and USB too');
 
   // Quick fill helper
   const handleLoadSample = () => {
-    setMerchantName('KHUN Virakboth');
-    setOutletName('VB Coffee');
-    setSerialNumber('WP555555Q55555');
-    setMid('55555555555');
-    setTid('555555');
-    setAddress('Phnom Penh');
-    setGoogleMap('https://maps.app.goo.gl/phnompenh');
+    setMerchantName('COFFEE CONCEPTS (CAMBODIA) LIMITED');
+    setOutletName('STARBUCKS 313 QUAYSIDE');
+    setSerialNumber('SN555555Q2222');
+    setMid('');
+    setTid('');
+    setAddress('HKL Ounalom River Side Mall, Preah Sisowath Quay, Village 1, PP');
+    setGoogleMap('N/A');
     setBusinessType('F&B / Restaurant & Cafe');
-    setContactPerson('Mr.Vibol');
-    setPhoneNumber('012 5555 55');
-    setIntegrationType('Serial Port');
+    setContactPerson('Seth Daka');
+    setPhoneNumber('012345678');
+    setIntegrationType('IP');
     setAssignedStaff('Nget Monioudom');
     setStaffId('222222');
-    setRemarks('Merchant Request Completed Set within Today.');
+    setRemarks('Please adding POS stand and USB too');
   };
 
   // UAT Loan specifics
@@ -83,10 +83,6 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({
     e.preventDefault();
     if (!merchantName.trim() || !outletName.trim() || !serialNumber.trim()) {
       setErrorMsg('Please fill in Merchant Company, Outlet Name, and POS Serial Number.');
-      return;
-    }
-    if (!mid.trim() || !tid.trim()) {
-      setErrorMsg('MID and TID are required for payment terminal integration.');
       return;
     }
     if (!assignedStaff.trim() || !staffId.trim()) {
@@ -258,11 +254,10 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({
 
               <div>
                 <label className="block text-xs font-medium text-[rgba(240,240,242,0.7)] mb-1">
-                  MID <span className="text-[#e74c3c]">*</span>
+                  MID <span className="text-[rgba(240,240,242,0.4)] text-[10px]">(Optional)</span>
                 </label>
                 <input
                   type="text"
-                  required
                   placeholder="e.g. 55555555555"
                   value={mid}
                   onChange={(e) => setMid(e.target.value)}
@@ -272,11 +267,10 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({
 
               <div>
                 <label className="block text-xs font-medium text-[rgba(240,240,242,0.7)] mb-1">
-                  TID <span className="text-[#e74c3c]">*</span>
+                  TID <span className="text-[rgba(240,240,242,0.4)] text-[10px]">(Optional)</span>
                 </label>
                 <input
                   type="text"
-                  required
                   placeholder="e.g. 555555"
                   value={tid}
                   onChange={(e) => setTid(e.target.value)}
