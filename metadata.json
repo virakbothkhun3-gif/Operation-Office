@@ -1,0 +1,6 @@
+{
+  "name": "System Integration Tracking",
+  "description": "Professional web application for managing daily merchant operations, POS terminal UAT tracking, integration requests, and automatic Telegram notifications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
