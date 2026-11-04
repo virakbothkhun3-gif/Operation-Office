@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, CheckCircle2, AlertCircle, Send } from 'lucide-react';
+import { X, CheckCircle2, AlertCircle, Send, MessageSquare, Copy, Check, FileText } from 'lucide-react';
 import { IntegrationType, MerchantRequest, TelegramConfig, UserProfile } from '../types';
 import { formatNewRequestTelegramMessage, sendTelegramMessage } from '../utils/telegram';
 import { appendTelegramLog } from '../utils/storage';
@@ -8,6 +8,7 @@ interface NewRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (request: MerchantRequest) => void;
+  onOpenImport?: () => void;
   telegramConfig: TelegramConfig;
   currentUser?: UserProfile | null;
 }
@@ -28,6 +29,7 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  onOpenImport,
   telegramConfig,
   currentUser,
 }) => {
@@ -45,11 +47,12 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({
   const [assignedStaff, setAssignedStaff] = useState(() => currentUser?.name || 'Nget Monioudom');
   const [staffId, setStaffId] = useState(() => currentUser?.staffId || '222222');
   const [remarks, setRemarks] = useState('Please adding POS stand and USB too');
+  const [telegramGroup, setTelegramGroup] = useState(() => telegramConfig.chatIdOrUsername || '@pos_integration_core');
 
   // Quick fill helper
   const handleLoadSample = () => {
-    setMerchantName('COFFEE CONCEPTS (CAMBODIA) LIMITED');
     setOutletName('STARBUCKS 313 QUAYSIDE');
+    setMerchantName('STARBUCKS 313 QUAYSIDE');
     setSerialNumber('SN555555Q2222');
     setMid('');
     setTid('');
@@ -62,6 +65,7 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({
     setAssignedStaff('Nget Monioudom');
     setStaffId('222222');
     setRemarks('Please adding POS stand and USB too');
+    setTelegramGroup(telegramConfig.chatIdOrUsername || '@pos_integration_core');
   };
 
   // UAT Loan specifics
@@ -76,13 +80,49 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({
   const [sendTelegram, setSendTelegram] = useState(telegramConfig.autoNotifyOnNewRequest);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showFormatPreview, setShowFormatPreview] = useState(false);
+  const [copiedPreview, setCopiedPreview] = useState(false);
+
+  const getDraftMessage = () => {
+    return formatNewRequestTelegramMessage({
+      id: 'REQ-PREVIEW',
+      merchantName: outletName.trim() || 'STARBUCKS 313 QUAYSIDE',
+      outletName: outletName.trim() || 'STARBUCKS 313 QUAYSIDE',
+      serialNumber: serialNumber.trim() || 'SN555555Q2222',
+      mid: mid.trim(),
+      tid: tid.trim(),
+      address: address.trim() || 'Phnom Penh',
+      googleMap: googleMap.trim() || 'N/A',
+      businessType,
+      contactPerson: contactPerson.trim() || 'Store Manager',
+      phoneNumber: phoneNumber.trim() || '-',
+      integrationType,
+      assignedStaff: assignedStaff.trim() || 'Nget Monioudom',
+      staffId: staffId.trim() || '222222',
+      status: 'New',
+      telegramGroup: telegramGroup.trim(),
+      isPosTerminalUat,
+      posTerminalUatStatus: isPosTerminalUat ? 'Pending Return' : 'Not Applicable',
+      posModel: isPosTerminalUat ? posModel : undefined,
+      remarks: remarks.trim() || 'Please adding POS stand and USB too',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      statusLogs: [],
+    });
+  };
+
+  const handleCopyDraft = () => {
+    navigator.clipboard.writeText(getDraftMessage());
+    setCopiedPreview(true);
+    setTimeout(() => setCopiedPreview(false), 2000);
+  };
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!merchantName.trim() || !outletName.trim() || !serialNumber.trim()) {
-      setErrorMsg('Please fill in Merchant Company, Outlet Name, and POS Serial Number.');
+    if (!outletName.trim() || !serialNumber.trim()) {
+      setErrorMsg('Please fill in Merchant Outlet and POS Serial Number.');
       return;
     }
     if (!assignedStaff.trim() || !staffId.trim()) {
@@ -112,6 +152,7 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({
       assignedStaff: assignedStaff.trim(),
       staffId: staffId.trim(),
       status: 'New',
+      telegramGroup: telegramGroup.trim() || undefined,
       isPosTerminalUat,
       posTerminalUatStatus: isPosTerminalUat ? 'Pending Return' : 'Not Applicable',
       posModel: isPosTerminalUat ? posModel : undefined,
@@ -142,12 +183,16 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({
 
     // Auto-dispatch to Telegram if enabled
     if (sendTelegram) {
+      const targetConfig: TelegramConfig = {
+        ...telegramConfig,
+        chatIdOrUsername: telegramGroup.trim() || telegramConfig.chatIdOrUsername,
+      };
       const tgMsg = formatNewRequestTelegramMessage(newRequest);
       const res = await sendTelegramMessage(
-        telegramConfig,
+        targetConfig,
         tgMsg,
         'New Request',
-        `New request: ${newRequest.merchantName} (${newRequest.id})`
+        `New request: ${newRequest.merchantName} (${newRequest.id}) -> ${telegramGroup.trim() || 'Default Group'}`
       );
       appendTelegramLog(res.log);
     }
@@ -158,33 +203,34 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-      <div 
-        className="bg-[#19191d] rounded-xl shadow-2xl border border-[rgba(240,240,242,0.12)] max-w-2xl w-full overflow-hidden my-8 text-[#f0f0f2]"
-        role="dialog"
-        aria-modal="true"
-      >
-        {/* Modal Header */}
-        <div className="px-6 py-4 flex items-center justify-between bg-[#0f0f11] border-b border-[rgba(240,240,242,0.08)]">
-          <div>
-            <h2 className="font-display text-lg uppercase tracking-wider font-semibold text-[#f0f0f2]">
-              Insert New Merchant Request
-            </h2>
-            <p className="text-xs font-mono text-[rgba(240,240,242,0.5)] mt-0.5">
-              Enter merchant details, POS serial, network integration parameters, and notify Telegram
-            </p>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-xs p-2 sm:p-4 overscroll-contain">
+      <div className="min-h-full flex items-center justify-center py-4 sm:py-8">
+        <div 
+          className="bg-[#19191d] rounded-xl shadow-2xl border border-[rgba(240,240,242,0.12)] max-w-2xl w-full overflow-hidden text-[#f0f0f2] flex flex-col max-h-[92vh] sm:max-h-[90vh]"
+          role="dialog"
+          aria-modal="true"
+        >
+          {/* Modal Header */}
+          <div className="px-4 sm:px-6 py-4 flex items-center justify-between bg-[#0f0f11] border-b border-[rgba(240,240,242,0.08)] shrink-0">
+            <div>
+              <h2 className="font-display text-base sm:text-lg uppercase tracking-wider font-semibold text-[#f0f0f2]">
+                Insert New Merchant Request
+              </h2>
+              <p className="text-[11px] sm:text-xs font-mono text-[rgba(240,240,242,0.5)] mt-0.5">
+                Enter merchant details, POS serial, network integration parameters, and notify Telegram
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-[rgba(240,240,242,0.6)] hover:text-white p-1 rounded-md transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-[rgba(240,240,242,0.6)] hover:text-white p-1 rounded-md transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Modal Body */}
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 overflow-y-auto overscroll-contain flex-1">
           {errorMsg && (
             <div className="p-3 bg-red-950/40 border border-red-500/40 text-red-400 text-xs rounded-lg flex items-center gap-2 font-mono">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -194,47 +240,48 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({
 
           {/* Section 1: Merchant & Outlet Identification */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-xs font-mono font-semibold text-[rgba(240,240,242,0.6)] uppercase tracking-wider">
                 1. Merchant & Outlet Information
               </h3>
-              <button
-                type="button"
-                onClick={handleLoadSample}
-                className="text-[11px] font-mono text-[#2ecc71] hover:underline transition-colors"
-              >
-                Autofill Sample (KHUN Virakboth)
-              </button>
+              <div className="flex items-center gap-3 text-[11px] font-mono">
+                {onOpenImport && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenImport();
+                    }}
+                    className="text-[rgba(240,240,242,0.6)] hover:text-[#2ecc71] underline transition-colors"
+                  >
+                    Import Existing File
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleLoadSample}
+                  className="text-[#2ecc71] hover:underline transition-colors"
+                >
+                  Autofill Sample (Starbucks 313 Quayside)
+                </button>
+              </div>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-[rgba(240,240,242,0.7)] mb-1">
-                  Merchant Company <span className="text-[#e74c3c]">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. KHUN Virakboth"
-                  value={merchantName}
-                  onChange={(e) => setMerchantName(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-[#0f0f11] border border-[rgba(240,240,242,0.12)] rounded-lg text-[#f0f0f2] placeholder-[rgba(240,240,242,0.3)] focus:outline-none focus:border-[#2ecc71]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-[rgba(240,240,242,0.7)] mb-1">
-                  Merchant Outlet <span className="text-[#e74c3c]">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. VB Coffee"
-                  value={outletName}
-                  onChange={(e) => setOutletName(e.target.value)}
-                  className="w-full text-xs px-3 py-2 bg-[#0f0f11] border border-[rgba(240,240,242,0.12)] rounded-lg text-[#f0f0f2] placeholder-[rgba(240,240,242,0.3)] focus:outline-none focus:border-[#2ecc71]"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-medium text-[rgba(240,240,242,0.7)] mb-1">
+                Merchant Outlet <span className="text-[#e74c3c]">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. STARBUCKS 313 QUAYSIDE or VB Coffee"
+                value={outletName}
+                onChange={(e) => {
+                  setOutletName(e.target.value);
+                  setMerchantName(e.target.value);
+                }}
+                className="w-full text-xs px-3 py-2 bg-[#0f0f11] border border-[rgba(240,240,242,0.12)] rounded-lg text-[#f0f0f2] placeholder-[rgba(240,240,242,0.3)] focus:outline-none focus:border-[#2ecc71]"
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -484,23 +531,112 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({
             />
           </div>
 
-          {/* Telegram Auto-Send Option */}
-          <div className="flex items-center justify-between p-3 bg-[#0f0f11] border border-[rgba(240,240,242,0.08)] rounded-lg">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={sendTelegram}
-                onChange={(e) => setSendTelegram(e.target.checked)}
-                className="w-4 h-4 text-[#2ecc71] rounded border-[rgba(240,240,242,0.2)] focus:ring-[#2ecc71]"
-              />
-              <span className="text-xs font-medium text-[#f0f0f2] flex items-center gap-1.5">
-                <Send className="w-3.5 h-3.5 text-[#2ecc71]" />
-                Auto-notify Telegram group / username upon submission
+          {/* Section 4: Telegram Group & Notification Dispatch */}
+          <div className="space-y-3 bg-[#0f0f11] p-3.5 rounded-lg border border-[rgba(240,240,242,0.08)]">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-medium text-[#f0f0f2] flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-[#2ecc71]" />
+                <span>Telegram Group</span>
+                <span className="text-[10px] font-mono text-[rgba(240,240,242,0.4)] font-normal">
+                  (Chat ID, @username, or Channel)
+                </span>
+              </label>
+              <span className="text-[10px] font-mono text-[#2ecc71] bg-[#2ecc71]/10 px-2 py-0.5 rounded border border-[#2ecc71]/20">
+                Integration Bot Dispatch
               </span>
-            </label>
-            <span className="text-[11px] text-[rgba(240,240,242,0.4)] font-mono">
-              {telegramConfig.chatIdOrUsername || 'Default Demo Group'}
-            </span>
+            </div>
+
+            <div>
+              <input
+                type="text"
+                placeholder="e.g. @pos_integration_core, -100123456789, or POS Team Group"
+                value={telegramGroup}
+                onChange={(e) => setTelegramGroup(e.target.value)}
+                className="w-full text-xs font-mono px-3 py-2 bg-[#19191d] border border-[rgba(240,240,242,0.12)] rounded-lg text-[#f0f0f2] placeholder-[rgba(240,240,242,0.3)] focus:outline-none focus:border-[#2ecc71]"
+              />
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                <span className="text-[10px] font-mono text-[rgba(240,240,242,0.4)] mr-1">Quick Select:</span>
+                {telegramConfig.chatIdOrUsername && (
+                  <button
+                    type="button"
+                    onClick={() => setTelegramGroup(telegramConfig.chatIdOrUsername)}
+                    className="text-[10px] font-mono px-2 py-0.5 rounded bg-[rgba(240,240,242,0.05)] text-[rgba(240,240,242,0.7)] hover:text-[#2ecc71] hover:bg-[#2ecc71]/10 border border-[rgba(240,240,242,0.08)] transition-all"
+                  >
+                    Configured: {telegramConfig.chatIdOrUsername}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setTelegramGroup('@pos_integration_core')}
+                  className="text-[10px] font-mono px-2 py-0.5 rounded bg-[rgba(240,240,242,0.05)] text-[rgba(240,240,242,0.7)] hover:text-[#2ecc71] hover:bg-[#2ecc71]/10 border border-[rgba(240,240,242,0.08)] transition-all"
+                >
+                  @pos_integration_core
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTelegramGroup('@cambodia_pos_alerts')}
+                  className="text-[10px] font-mono px-2 py-0.5 rounded bg-[rgba(240,240,242,0.05)] text-[rgba(240,240,242,0.7)] hover:text-[#2ecc71] hover:bg-[#2ecc71]/10 border border-[rgba(240,240,242,0.08)] transition-all"
+                >
+                  @cambodia_pos_alerts
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTelegramGroup('-1001928374829')}
+                  className="text-[10px] font-mono px-2 py-0.5 rounded bg-[rgba(240,240,242,0.05)] text-[rgba(240,240,242,0.7)] hover:text-[#2ecc71] hover:bg-[#2ecc71]/10 border border-[rgba(240,240,242,0.08)] transition-all"
+                >
+                  -1001928374829 (Ops)
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-[rgba(240,240,242,0.06)] flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={sendTelegram}
+                  onChange={(e) => setSendTelegram(e.target.checked)}
+                  className="w-4 h-4 text-[#2ecc71] rounded border-[rgba(240,240,242,0.2)] focus:ring-[#2ecc71]"
+                />
+                <span className="text-xs font-medium text-[#f0f0f2] flex items-center gap-1.5">
+                  <Send className="w-3.5 h-3.5 text-[#2ecc71]" />
+                  Auto-notify this Telegram group upon submission
+                </span>
+              </label>
+              <span className="text-[11px] text-[rgba(240,240,242,0.4)] font-mono">
+                {telegramGroup ? telegramGroup : 'No group specified'}
+              </span>
+            </div>
+
+            {/* Message Format Preview & Manual Copy */}
+            <div className="pt-2 border-t border-[rgba(240,240,242,0.06)]">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowFormatPreview((prev) => !prev)}
+                  className="text-xs font-mono text-[#2ecc71] hover:underline flex items-center gap-1.5"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>{showFormatPreview ? 'Hide Message Format Preview' : 'Preview Message Format & Manual Copy'}</span>
+                </button>
+
+                {showFormatPreview && (
+                  <button
+                    type="button"
+                    onClick={handleCopyDraft}
+                    className="text-xs font-mono px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-[#2ecc71] border border-white/10 flex items-center gap-1 transition-colors"
+                  >
+                    {copiedPreview ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedPreview ? 'Copied!' : 'Copy to Clipboard (Manual Paste)'}</span>
+                  </button>
+                )}
+              </div>
+
+              {showFormatPreview && (
+                <div className="mt-2.5 p-3.5 bg-[#19191d] rounded-lg border border-[rgba(240,240,242,0.08)] font-mono text-xs text-[#f0f0f2] whitespace-pre-wrap leading-relaxed select-all shadow-inner">
+                  {getDraftMessage()}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Modal Footer */}
@@ -529,6 +665,7 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

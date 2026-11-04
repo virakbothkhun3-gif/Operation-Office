@@ -109,33 +109,34 @@ export const StatusUpdateModal: React.FC<StatusUpdateModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-      <div 
-        className="bg-[#19191d] rounded-xl shadow-2xl border border-[rgba(240,240,242,0.12)] max-w-lg w-full overflow-hidden my-8 text-[#f0f0f2]"
-        role="dialog"
-        aria-modal="true"
-      >
-        {/* Modal Header */}
-        <div className="px-6 py-4 flex items-center justify-between bg-[#0f0f11] border-b border-[rgba(240,240,242,0.08)]">
-          <div>
-            <h2 className="font-display text-lg uppercase tracking-wider font-semibold text-[#f0f0f2]">
-              Update Request Status
-            </h2>
-            <p className="text-xs font-mono text-[rgba(240,240,242,0.5)] mt-0.5">
-              {request.id} · {request.merchantName} ({request.outletName})
-            </p>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-xs p-2 sm:p-4 overscroll-contain">
+      <div className="min-h-full flex items-center justify-center py-4 sm:py-8">
+        <div 
+          className="bg-[#19191d] rounded-xl shadow-2xl border border-[rgba(240,240,242,0.12)] max-w-lg w-full overflow-hidden text-[#f0f0f2] flex flex-col max-h-[92vh] sm:max-h-[90vh]"
+          role="dialog"
+          aria-modal="true"
+        >
+          {/* Modal Header */}
+          <div className="px-4 sm:px-6 py-4 flex items-center justify-between bg-[#0f0f11] border-b border-[rgba(240,240,242,0.08)] shrink-0">
+            <div>
+              <h2 className="font-display text-base sm:text-lg uppercase tracking-wider font-semibold text-[#f0f0f2]">
+                Update Request Status
+              </h2>
+              <p className="text-[11px] sm:text-xs font-mono text-[rgba(240,240,242,0.5)] mt-0.5">
+                {request.id} · {request.merchantName} ({request.outletName})
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-[rgba(240,240,242,0.6)] hover:text-white p-1 rounded-md transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-[rgba(240,240,242,0.6)] hover:text-white p-1 rounded-md transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Modal Body */}
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto overscroll-contain flex-1">
           {errorMsg && (
             <div className="p-3 bg-red-950/40 border border-red-500/40 text-red-400 text-xs rounded-lg flex items-center gap-2 font-mono">
               <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -309,6 +310,7 @@ export const StatusUpdateModal: React.FC<StatusUpdateModalProps> = ({
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

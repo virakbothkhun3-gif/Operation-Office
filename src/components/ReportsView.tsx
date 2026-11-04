@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { FileSpreadsheet, Calendar, Search, CheckCircle, Clock, AlertTriangle, Layers, BarChart2 } from 'lucide-react';
+import { FileSpreadsheet, Calendar, Search, CheckCircle, Clock, AlertTriangle, Layers, BarChart2, Upload } from 'lucide-react';
 import { MerchantRequest } from '../types';
 import { exportMerchantRequestsToExcel, exportUatTerminalsToExcel, exportAuditHistoryToExcel } from '../utils/excelExport';
 
 interface ReportsViewProps {
   requests: MerchantRequest[];
   onOpenDetail: (request: MerchantRequest) => void;
+  onOpenImportData?: () => void;
 }
 
-export const ReportsView: React.FC<ReportsViewProps> = ({ requests, onOpenDetail }) => {
+export const ReportsView: React.FC<ReportsViewProps> = ({ requests, onOpenDetail, onOpenImportData }) => {
   const [reportType, setReportType] = useState<'daily' | 'monthly' | 'history' | 'excel'>('daily');
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [selectedMonth, setSelectedMonth] = useState('2026-10');
@@ -58,76 +59,82 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ requests, onOpenDetail
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[rgba(240,240,242,0.08)]">
-        <div>
-          <h1 className="font-display text-xl uppercase tracking-[0.05em] text-[#f0f0f2]">
-            Operations & Analytics Reports
-          </h1>
-          <p className="text-xs font-mono text-[rgba(240,240,242,0.5)] mt-1">
-            System intake metrics, throughput audits, and spreadsheet data export
-          </p>
+      {/* Consolidated Toolbar: Report Tabs + Actions */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-1.5 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl">
+        {/* Report Type Tabs */}
+        <div className="flex flex-wrap items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setReportType('daily')}
+            className={`px-3 py-1.5 text-xs font-mono uppercase rounded-lg transition-colors ${
+              reportType === 'daily'
+                ? 'bg-white/10 text-[#2ecc71] font-semibold border border-[#2ecc71]/40'
+                : 'text-[rgba(240,240,242,0.6)] hover:text-[#f0f0f2] hover:bg-white/5 border border-transparent'
+            }`}
+          >
+            Daily Operations
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setReportType('monthly')}
+            className={`px-3 py-1.5 text-xs font-mono uppercase rounded-lg transition-colors ${
+              reportType === 'monthly'
+                ? 'bg-white/10 text-[#2ecc71] font-semibold border border-[#2ecc71]/40'
+                : 'text-[rgba(240,240,242,0.6)] hover:text-[#f0f0f2] hover:bg-white/5 border border-transparent'
+            }`}
+          >
+            Monthly Throughput
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setReportType('history')}
+            className={`px-3 py-1.5 text-xs font-mono uppercase rounded-lg transition-colors ${
+              reportType === 'history'
+                ? 'bg-white/10 text-[#2ecc71] font-semibold border border-[#2ecc71]/40'
+                : 'text-[rgba(240,240,242,0.6)] hover:text-[#f0f0f2] hover:bg-white/5 border border-transparent'
+            }`}
+          >
+            Audit History
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setReportType('excel')}
+            className={`px-3 py-1.5 text-xs font-mono uppercase rounded-lg transition-colors ${
+              reportType === 'excel'
+                ? 'bg-white/10 text-[#2ecc71] font-semibold border border-[#2ecc71]/40'
+                : 'text-[rgba(240,240,242,0.6)] hover:text-[#f0f0f2] hover:bg-white/5 border border-transparent'
+            }`}
+          >
+            Export Center
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => exportMerchantRequestsToExcel(requests)}
-          className="btn-action-primary text-xs flex items-center gap-1.5 self-start sm:self-auto"
-        >
-          <FileSpreadsheet className="w-3.5 h-3.5" />
-          <span>Export to Excel (.xlsx)</span>
-        </button>
-      </div>
-
-      {/* Report Type Tabs */}
-      <div className="flex flex-wrap items-center gap-1.5 p-1 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-lg">
-        <button
-          type="button"
-          onClick={() => setReportType('daily')}
-          className={`px-3 py-1.5 text-xs font-mono uppercase rounded transition-colors ${
-            reportType === 'daily'
-              ? 'bg-white/10 text-[#2ecc71] font-semibold border border-[#2ecc71]/40'
-              : 'text-[rgba(240,240,242,0.5)] hover:text-[#f0f0f2]'
-          }`}
-        >
-          Daily Operation Report
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setReportType('monthly')}
-          className={`px-3 py-1.5 text-xs font-mono uppercase rounded transition-colors ${
-            reportType === 'monthly'
-              ? 'bg-white/10 text-[#2ecc71] font-semibold border border-[#2ecc71]/40'
-              : 'text-[rgba(240,240,242,0.5)] hover:text-[#f0f0f2]'
-          }`}
-        >
-          Monthly Request Report
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setReportType('history')}
-          className={`px-3 py-1.5 text-xs font-mono uppercase rounded transition-colors ${
-            reportType === 'history'
-              ? 'bg-white/10 text-[#2ecc71] font-semibold border border-[#2ecc71]/40'
-              : 'text-[rgba(240,240,242,0.5)] hover:text-[#f0f0f2]'
-          }`}
-        >
-          Integration History
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setReportType('excel')}
-          className={`px-3 py-1.5 text-xs font-mono uppercase rounded transition-colors ${
-            reportType === 'excel'
-              ? 'bg-white/10 text-[#2ecc71] font-semibold border border-[#2ecc71]/40'
-              : 'text-[rgba(240,240,242,0.5)] hover:text-[#f0f0f2]'
-          }`}
-        >
-          Export Center
-        </button>
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 self-start lg:self-auto px-1">
+          {onOpenImportData && (
+            <button
+              type="button"
+              onClick={onOpenImportData}
+              className="btn-action-secondary text-xs flex items-center gap-1.5 py-1.5 px-3"
+              title="Import existing data file (.xlsx, .csv, .json)"
+            >
+              <Upload className="w-3.5 h-3.5 text-[#2ecc71]" />
+              <span className="hidden sm:inline">Import File</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => exportMerchantRequestsToExcel(requests)}
+            className="btn-action-primary text-xs flex items-center gap-1.5 py-1.5 px-3"
+            title="Download full register as Excel spreadsheet"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>Export XLSX</span>
+          </button>
+        </div>
       </div>
 
       {/* 1. Daily Operation Report */}
@@ -154,42 +161,42 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ requests, onOpenDetail
           </div>
 
           {/* Daily metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-5 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl shadow-xs">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
+            <div className="p-3.5 sm:p-5 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl shadow-xs">
               <label className="font-mono text-[0.65rem] uppercase text-[rgba(240,240,242,0.5)] block mb-1">
                 New Logged
               </label>
-              <div className="text-3xl font-mono font-semibold text-[#f0f0f2] tabular-nums">
+              <div className="text-2xl sm:text-3xl font-mono font-semibold text-[#f0f0f2] tabular-nums">
                 {dailyRequestsCreated.length < 10 ? `0${dailyRequestsCreated.length}` : dailyRequestsCreated.length}
               </div>
               <div className="text-[10px] font-mono text-[rgba(240,240,242,0.4)] mt-1">Intake on {selectedDate}</div>
             </div>
 
-            <div className="p-5 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl shadow-xs">
+            <div className="p-3.5 sm:p-5 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl shadow-xs">
               <label className="font-mono text-[0.65rem] uppercase text-[rgba(240,240,242,0.5)] block mb-1">
                 Updates Executed
               </label>
-              <div className="text-3xl font-mono font-semibold text-[#3498db] tabular-nums">
+              <div className="text-2xl sm:text-3xl font-mono font-semibold text-[#3498db] tabular-nums">
                 {dailyLogsExecuted.length < 10 ? `0${dailyLogsExecuted.length}` : dailyLogsExecuted.length}
               </div>
               <div className="text-[10px] font-mono text-[#3498db]/70 mt-1">Status transitions</div>
             </div>
 
-            <div className="p-5 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl shadow-xs">
+            <div className="p-3.5 sm:p-5 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl shadow-xs">
               <label className="font-mono text-[0.65rem] uppercase text-[rgba(240,240,242,0.5)] block mb-1">
                 Active Pipeline
               </label>
-              <div className="text-3xl font-mono font-semibold text-[#f0f0f2] tabular-nums">
+              <div className="text-2xl sm:text-3xl font-mono font-semibold text-[#f0f0f2] tabular-nums">
                 {monthlyInProgress < 10 ? `0${monthlyInProgress}` : monthlyInProgress}
               </div>
               <div className="text-[10px] font-mono text-[rgba(240,240,242,0.4)] mt-1">Working & Testing</div>
             </div>
 
-            <div className="p-5 bg-[#19191d] border border-[#f1c40f]/50 rounded-xl shadow-xs">
+            <div className="p-3.5 sm:p-5 bg-[#19191d] border border-[#f1c40f]/50 rounded-xl shadow-xs">
               <label className="font-mono text-[0.65rem] uppercase text-[#f1c40f] block mb-1">
                 UAT Return Due
               </label>
-              <div className="text-3xl font-mono font-semibold text-[#f1c40f] tabular-nums">
+              <div className="text-2xl sm:text-3xl font-mono font-semibold text-[#f1c40f] tabular-nums">
                 {requests.filter((r) => r.posTerminalUatStatus === 'Pending Return').length < 10
                   ? `0${requests.filter((r) => r.posTerminalUatStatus === 'Pending Return').length}`
                   : requests.filter((r) => r.posTerminalUatStatus === 'Pending Return').length}
@@ -275,42 +282,42 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ requests, onOpenDetail
           </div>
 
           {/* Monthly KPI Overview */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-5 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl shadow-xs">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
+            <div className="p-3.5 sm:p-5 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl shadow-xs">
               <label className="font-mono text-[0.65rem] uppercase text-[rgba(240,240,242,0.5)] block mb-1">
                 Total Month Requests
               </label>
-              <div className="text-3xl font-mono font-semibold text-[#f0f0f2] tabular-nums">
+              <div className="text-2xl sm:text-3xl font-mono font-semibold text-[#f0f0f2] tabular-nums">
                 {monthlyRequests.length < 10 ? `0${monthlyRequests.length}` : monthlyRequests.length}
               </div>
               <div className="text-[10px] font-mono text-[rgba(240,240,242,0.4)] mt-1">Logged in {selectedMonth}</div>
             </div>
 
-            <div className="p-5 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl shadow-xs">
+            <div className="p-3.5 sm:p-5 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl shadow-xs">
               <label className="font-mono text-[0.65rem] uppercase text-[rgba(240,240,242,0.5)] block mb-1">
                 Completion Rate
               </label>
-              <div className="text-3xl font-mono font-semibold text-[#2ecc71] tabular-nums">
+              <div className="text-2xl sm:text-3xl font-mono font-semibold text-[#2ecc71] tabular-nums">
                 {monthlyCompletionRate}%
               </div>
               <div className="text-[10px] font-mono text-[#2ecc71]/70 mt-1">{monthlyCompleted} completed</div>
             </div>
 
-            <div className="p-5 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl shadow-xs">
+            <div className="p-3.5 sm:p-5 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl shadow-xs">
               <label className="font-mono text-[0.65rem] uppercase text-[rgba(240,240,242,0.5)] block mb-1">
                 Testing & Working
               </label>
-              <div className="text-3xl font-mono font-semibold text-[#3498db] tabular-nums">
+              <div className="text-2xl sm:text-3xl font-mono font-semibold text-[#3498db] tabular-nums">
                 {monthlyInProgress < 10 ? `0${monthlyInProgress}` : monthlyInProgress}
               </div>
               <div className="text-[10px] font-mono text-[#3498db]/70 mt-1">Active certification</div>
             </div>
 
-            <div className="p-5 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl shadow-xs">
+            <div className="p-3.5 sm:p-5 bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl shadow-xs">
               <label className="font-mono text-[0.65rem] uppercase text-[rgba(240,240,242,0.5)] block mb-1">
                 Cancelled / Rejected
               </label>
-              <div className="text-3xl font-mono font-semibold text-[#e74c3c] tabular-nums">
+              <div className="text-2xl sm:text-3xl font-mono font-semibold text-[#e74c3c] tabular-nums">
                 {monthlyRejected < 10 ? `0${monthlyRejected}` : monthlyRejected}
               </div>
               <div className="text-[10px] font-mono text-[#e74c3c]/70 mt-1">Aborted tickets</div>

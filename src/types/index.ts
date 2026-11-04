@@ -50,6 +50,9 @@ export interface MerchantRequest {
   uatExpectedReturnDate?: string;
   uatActualReturnDate?: string;
 
+  // Telegram Group / Destination
+  telegramGroup?: string;
+
   remarks: string;
   createdAt: string;
   updatedAt: string;
@@ -68,7 +71,7 @@ export interface TelegramConfig {
 export interface TelegramDeliveryLog {
   id: string;
   timestamp: string;
-  trigger: 'New Request' | 'Status Update' | 'Test Ping' | 'Manual Resend';
+  trigger: 'New Request' | 'Status Update' | 'Test Ping' | 'Manual Resend' | 'Manual Send';
   recipient: string;
   status: 'Sent' | 'Failed' | 'Simulated';
   messageSummary: string;
@@ -84,4 +87,20 @@ export interface UserProfile {
   avatarInitials: string;
   department: string;
   lastLoginAt?: string;
+}
+
+export type NotificationKeyword = 'POS' | 'Installation' | 'Maintenance' | 'Urgent' | 'General';
+
+export interface GroupNotification {
+  id: string;
+  senderName: string;
+  senderAvatar?: string;
+  senderRole?: string;
+  groupName: string;
+  message: string;
+  timestamp: string;
+  isRead: boolean;
+  isMention: boolean;
+  keywords: NotificationKeyword[];
+  relatedRequestId?: string;
 }

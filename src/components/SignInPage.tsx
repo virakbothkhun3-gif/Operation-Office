@@ -1,229 +1,235 @@
 import React, { useState } from 'react';
 import { 
-  Shield, 
-  User, 
   LogIn, 
-  CheckCircle2, 
-  ArrowRight, 
-  Lock, 
-  Users 
+  Sun, 
+  Moon, 
+  User, 
+  ShieldCheck,
+  Check
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { DEFAULT_STAFF_USERS } from '../utils/storage';
 
 interface SignInPageProps {
   onSignIn: (user: UserProfile) => void;
+  theme?: 'day' | 'night';
+  onToggleTheme?: () => void;
 }
 
-export const SignInPage: React.FC<SignInPageProps> = ({ onSignIn }) => {
-  const [tab, setTab] = useState<'quick' | 'custom'>('quick');
+export const SignInPage: React.FC<SignInPageProps> = ({ 
+  onSignIn, 
+  theme = 'night', 
+  onToggleTheme 
+}) => {
+  // Default to Nget Monioudom (222222)
+  const defaultUser = DEFAULT_STAFF_USERS[0];
+  
+  const [staffName, setStaffName] = useState<string>(defaultUser.name);
+  const [staffId, setStaffId] = useState<string>(defaultUser.staffId);
+  const [role, setRole] = useState<UserProfile['role']>(defaultUser.role);
+  const [department, setDepartment] = useState<string>(defaultUser.department);
+  const [errorMsg, setErrorMsg] = useState<string>('');
 
-  // Custom Sign In State
-  const [customName, setCustomName] = useState('');
-  const [customStaffId, setCustomStaffId] = useState('');
-  const [customRole, setCustomRole] = useState<UserProfile['role']>('Lead Integration Engineer');
-  const [customDepartment, setCustomDepartment] = useState('Merchant POS Integration');
-  const [pin, setPin] = useState('123456');
-  const [errorMsg, setErrorMsg] = useState('');
+  // One-click quick login for staff chip
+  const handleQuickClick = (user: UserProfile) => {
+    onSignIn(user);
+  };
 
-  const handleCustomSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customName.trim() || !customStaffId.trim()) {
-      setErrorMsg('Please enter your full staff name and staff ID.');
+    if (!staffName.trim() || !staffId.trim()) {
+      setErrorMsg('Please enter both Staff Name and Staff ID.');
       return;
     }
 
-    const initials = customName
+    const matched = DEFAULT_STAFF_USERS.find(
+      (u) => u.staffId.trim() === staffId.trim()
+    );
+
+    if (matched) {
+      onSignIn({
+        ...matched,
+        name: staffName.trim(),
+        staffId: staffId.trim(),
+        lastLoginAt: new Date().toISOString(),
+      });
+      return;
+    }
+
+    const initials = staffName
       .trim()
       .split(' ')
       .map((n) => n[0])
       .slice(0, 2)
       .join('')
-      .toUpperCase();
+      .toUpperCase() || 'ST';
 
     const newUser: UserProfile = {
-      id: `USR-${customStaffId.trim()}`,
-      name: customName.trim(),
-      staffId: customStaffId.trim(),
-      email: `${customName.toLowerCase().replace(/\s+/g, '.')}@pos-integration.com`,
-      role: customRole,
-      avatarInitials: initials || 'ST',
-      department: customDepartment,
+      id: `USR-${staffId.trim()}`,
+      name: staffName.trim(),
+      staffId: staffId.trim(),
+      email: `${staffName.toLowerCase().replace(/\s+/g, '.')}@pos-integration.com`,
+      role: role,
+      avatarInitials: initials,
+      department: department,
       lastLoginAt: new Date().toISOString(),
     };
 
     onSignIn(newUser);
   };
 
-  const handleQuickSignIn = (user: UserProfile) => {
-    onSignIn(user);
-  };
-
   return (
-    <div className="min-h-screen bg-[#0f0f11] text-[#f0f0f2] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans antialiased">
-      {/* Header Monogram */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div 
-          className="mx-auto w-12 h-12 bg-[#f0f0f2] text-[#0f0f11] font-display flex items-center justify-center rounded text-xl font-bold shadow-md mb-4"
-        >
-          SI
+    <div className="min-h-screen bg-[#0f0f11] text-[#f0f0f2] flex flex-col justify-center items-center py-10 px-4 font-sans antialiased relative">
+      {/* Top Right Theme Toggle */}
+      {onToggleTheme && (
+        <div className="absolute top-4 right-4">
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            className="p-2 sm:px-3 sm:py-1.5 rounded-lg border border-[rgba(240,240,242,0.1)] bg-[#19191d] hover:bg-white/5 text-xs font-mono flex items-center gap-1.5 text-[rgba(240,240,242,0.8)] hover:text-[#f0f0f2] transition-colors"
+            title={theme === 'night' ? 'Switch to Day Mode (Light)' : 'Switch to Night Mode (Dark)'}
+            aria-label="Toggle Theme"
+          >
+            {theme === 'night' ? (
+              <>
+                <Sun className="w-4 h-4 text-[#f1c40f]" />
+                <span className="hidden sm:inline text-xs">Day</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-4 h-4 text-[#3498db]" />
+                <span className="hidden sm:inline text-xs">Night</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Centered Login Card */}
+      <div className="w-full max-w-md">
+        {/* Monogram & Title */}
+        <div className="text-center mb-6">
+          <div className="w-12 h-12 mx-auto mb-3 bg-[#19191d] border border-[rgba(240,240,242,0.15)] text-[#f0f0f2] font-display flex items-center justify-center rounded-xl text-lg font-bold shadow-xs">
+            OO
+          </div>
+          <h1 className="font-display text-xl font-bold uppercase tracking-wider text-[#f0f0f2]">
+            OPERATION OFFICE
+          </h1>
+          <p className="text-xs font-mono text-[rgba(240,240,242,0.5)] mt-1">
+            Merchant Support
+          </p>
         </div>
 
-        <h1 className="font-display text-2xl font-semibold uppercase tracking-[0.05em] text-[#f0f0f2]">
-          Operations Dashboard
-        </h1>
-        <p className="mt-1 text-xs font-mono text-[rgba(240,240,242,0.5)]">
-          System Integration & Merchant Tracking / Auth Gate
-        </p>
-      </div>
-
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-xl px-4">
-        <div className="bg-[#19191d] py-8 px-6 sm:px-10 shadow-2xl border border-[rgba(240,240,242,0.08)] rounded-xl space-y-6">
-          {/* Sign In Mode Tabs */}
-          <div className="flex border-b border-[rgba(240,240,242,0.08)] pb-2 gap-4">
-            <button
-              type="button"
-              onClick={() => setTab('quick')}
-              className={`pb-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
-                tab === 'quick'
-                  ? 'border-[#2ecc71] text-[#2ecc71]'
-                  : 'border-transparent text-[rgba(240,240,242,0.5)] hover:text-[#f0f0f2]'
-              }`}
-            >
-              <Users className="w-4 h-4" />
-              <span>Select Staff Profile (1-Click)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setTab('custom')}
-              className={`pb-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
-                tab === 'custom'
-                  ? 'border-[#2ecc71] text-[#2ecc71]'
-                  : 'border-transparent text-[rgba(240,240,242,0.5)] hover:text-[#f0f0f2]'
-              }`}
-            >
-              <User className="w-4 h-4" />
-              <span>Custom Staff / Guest Sign In</span>
-            </button>
-          </div>
-
-          {/* Quick Staff Sign In */}
-          {tab === 'quick' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-[rgba(240,240,242,0.5)]">
-                  SELECT YOUR PROFILE TO SIGN IN:
-                </span>
-                <span className="text-[11px] font-mono text-[#2ecc71] bg-[#2ecc71]/10 px-2 py-0.5 rounded border border-[#2ecc71]/20">
-                  READY
-                </span>
-              </div>
-
-              <div className="space-y-2.5">
-                {DEFAULT_STAFF_USERS.map((user) => (
-                  <div
-                    key={user.id}
-                    onClick={() => handleQuickSignIn(user)}
-                    className="p-3.5 rounded-lg border border-[rgba(240,240,242,0.08)] bg-[#0f0f11]/60 hover:border-[#2ecc71]/60 hover:bg-[#0f0f11] cursor-pointer transition-all flex items-center justify-between group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-10 h-10 rounded bg-[#19191d] border border-[rgba(240,240,242,0.12)] font-display text-[#f0f0f2] flex items-center justify-center font-bold text-sm shadow-xs"
-                      >
-                        {user.avatarInitials}
-                      </div>
-
-                      <div className="text-left">
-                        <div className="text-xs font-semibold text-[#f0f0f2] group-hover:text-[#2ecc71] transition-colors flex items-center gap-2">
-                          <span>{user.name}</span>
-                          <span className="font-mono text-[10px] text-[rgba(240,240,242,0.4)]">ID: {user.staffId}</span>
-                        </div>
-                        <div className="text-[11px] text-[rgba(240,240,242,0.5)]">
-                          {user.role} · {user.department}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-[rgba(240,240,242,0.4)] group-hover:text-[#2ecc71] transition-colors">
-                      <span className="text-xs font-semibold hidden sm:inline">Sign In</span>
-                      <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {/* Normal Login Box */}
+        <div className="bg-[#19191d] border border-[rgba(240,240,242,0.08)] rounded-xl p-6 sm:p-7 shadow-xl space-y-5">
+          {errorMsg && (
+            <div className="p-3 rounded-lg bg-red-950/40 border border-red-500/30 text-red-400 text-xs">
+              {errorMsg}
             </div>
           )}
 
-          {/* Custom Sign In */}
-          {tab === 'custom' && (
-            <form onSubmit={handleCustomSubmit} className="space-y-4">
-              {errorMsg && (
-                <div className="p-3 rounded-lg bg-red-950/40 border border-red-500/40 text-red-400 text-xs flex items-center gap-2">
-                  <span>{errorMsg}</span>
-                </div>
-              )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Field 1: Assigned Staff */}
+            <div>
+              <label className="block text-xs font-medium text-[rgba(240,240,242,0.7)] mb-1">
+                👨‍💼 Assigned Staff <span className="text-[#e74c3c]">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                list="staff-suggestions"
+                value={staffName}
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  setStaffName(newName);
+                  const matchedUser = DEFAULT_STAFF_USERS.find(
+                    (u) => u.name.toLowerCase() === newName.trim().toLowerCase()
+                  );
+                  if (matchedUser) {
+                    setStaffId(matchedUser.staffId);
+                    setRole(matchedUser.role);
+                    setDepartment(matchedUser.department);
+                  }
+                }}
+                placeholder="e.g. Nget Monioudom"
+                className="w-full text-xs px-3 py-2 bg-[#0f0f11] border border-[rgba(240,240,242,0.12)] rounded-lg text-[#f0f0f2] placeholder-[rgba(240,240,242,0.3)] focus:outline-none focus:border-[#2ecc71] transition-colors"
+              />
+              <datalist id="staff-suggestions">
+                {DEFAULT_STAFF_USERS.map((user) => (
+                  <option key={user.staffId} value={user.name}>
+                    Staff ID: {user.staffId} ({user.role})
+                  </option>
+                ))}
+              </datalist>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-[rgba(240,240,242,0.7)] mb-1">
-                    Full Staff Name <span className="text-[#e74c3c]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Nget Monioudom"
-                    value={customName}
-                    onChange={(e) => setCustomName(e.target.value)}
-                    className="w-full text-xs px-3 py-2 bg-[#0f0f11] border border-[rgba(240,240,242,0.12)] rounded-lg text-[#f0f0f2] focus:outline-none focus:border-[#2ecc71]"
-                  />
-                </div>
+            {/* Field 2: Staff ID */}
+            <div>
+              <label className="block text-xs font-medium text-[rgba(240,240,242,0.7)] mb-1">
+                Staff ID <span className="text-[#e74c3c]">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={staffId}
+                onChange={(e) => setStaffId(e.target.value)}
+                placeholder="e.g. 222222"
+                className="w-full text-xs font-mono px-3 py-2 bg-[#0f0f11] border border-[rgba(240,240,242,0.12)] rounded-lg text-[#f0f0f2] placeholder-[rgba(240,240,242,0.3)] focus:outline-none focus:border-[#2ecc71]"
+              />
+            </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-[rgba(240,240,242,0.7)] mb-1">
-                    Staff ID <span className="text-[#e74c3c]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 222222"
-                    value={customStaffId}
-                    onChange={(e) => setCustomStaffId(e.target.value)}
-                    className="w-full text-xs font-mono px-3 py-2 bg-[#0f0f11] border border-[rgba(240,240,242,0.12)] rounded-lg text-[#f0f0f2] focus:outline-none focus:border-[#2ecc71]"
-                  />
-                </div>
-              </div>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              className="w-full btn-action-primary py-2.5 text-xs font-semibold flex items-center justify-center gap-2 mt-2 shadow-xs"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Log In to Dashboard</span>
+            </button>
+          </form>
 
-              <div>
-                <label className="block text-xs font-medium text-[rgba(240,240,242,0.7)] mb-1">
-                  Access Security PIN
-                </label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value)}
-                    className="w-full text-xs font-mono px-3 py-2 bg-[#0f0f11] border border-[rgba(240,240,242,0.12)] rounded-lg text-[#f0f0f2] focus:outline-none focus:border-[#2ecc71]"
-                  />
-                  <Lock className="w-3.5 h-3.5 absolute right-3 top-3 text-[rgba(240,240,242,0.4)]" />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full btn-action-primary py-2.5 font-semibold text-xs flex items-center justify-center gap-2 mt-4"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>Authorize & Enter Dashboard</span>
-              </button>
-            </form>
-          )}
-
-          {/* Security footnote */}
-          <div className="pt-2 text-center text-[10px] font-mono text-[rgba(240,240,242,0.4)] flex items-center justify-center gap-1.5 border-t border-[rgba(240,240,242,0.06)]">
-            <Shield className="w-3 h-3 text-[#2ecc71]" />
-            <span>ROLE-BASED AUDIT ACTIVE · ISO/IEC 27001 SECURE DESK</span>
+          {/* Quick 1-Click Access Buttons */}
+          <div className="pt-3 border-t border-[rgba(240,240,242,0.06)]">
+            <span className="block text-[11px] font-mono text-[rgba(240,240,242,0.4)] mb-2 uppercase">
+              1-Click Quick Access:
+            </span>
+            <div className="flex flex-col gap-1.5">
+              {DEFAULT_STAFF_USERS.slice(0, 3).map((user) => (
+                <button
+                  key={user.id}
+                  type="button"
+                  onClick={() => handleQuickClick(user)}
+                  className="w-full px-3 py-2 rounded-lg bg-[#0f0f11] border border-[rgba(240,240,242,0.06)] hover:border-[#2ecc71]/50 hover:bg-white/5 text-left text-xs transition-colors flex items-center justify-between group"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded bg-[#19191d] border border-[rgba(240,240,242,0.1)] text-[10px] font-bold text-[#f0f0f2] flex items-center justify-center">
+                      {user.avatarInitials}
+                    </span>
+                    <span className="text-[#f0f0f2] group-hover:text-[#2ecc71] transition-colors">
+                      {user.name}
+                    </span>
+                    <span className="font-mono text-[10px] text-[rgba(240,240,242,0.4)]">
+                      ({user.staffId})
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono text-[rgba(240,240,242,0.4)] group-hover:text-[#2ecc71]">
+                    Enter →
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* Simple Security Footnote */}
+          <div className="text-center pt-1 text-[10px] font-mono text-[rgba(240,240,242,0.4)] flex items-center justify-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#2ecc71]" />
+            <span>Authenticated Staff Session</span>
+          </div>
+        </div>
+
+        {/* Simple Footer */}
+        <div className="text-center mt-6 text-[11px] font-mono text-[rgba(240,240,242,0.35)]">
+          Merchant POS Operations · Cambodia
         </div>
       </div>
     </div>

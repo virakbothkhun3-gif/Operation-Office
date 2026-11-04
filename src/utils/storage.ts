@@ -1,10 +1,18 @@
-import { MerchantRequest, TelegramConfig, TelegramDeliveryLog, UserProfile } from '../types';
+import { 
+  MerchantRequest, 
+  TelegramConfig, 
+  TelegramDeliveryLog, 
+  UserProfile, 
+  GroupNotification, 
+  NotificationKeyword 
+} from '../types';
 import { DEFAULT_TELEGRAM_CONFIG } from './telegram';
 
-const STORAGE_KEY_REQUESTS = 'system_integration_requests_v4';
+const STORAGE_KEY_REQUESTS = 'system_integration_requests_v5';
 const STORAGE_KEY_TELEGRAM_CONFIG = 'system_integration_telegram_cfg_v1';
 const STORAGE_KEY_TELEGRAM_LOGS = 'system_integration_telegram_logs_v1';
 const STORAGE_KEY_CURRENT_USER = 'system_integration_active_user_v1';
+const STORAGE_KEY_NOTIFICATIONS = 'system_integration_notifications_v2';
 
 export const INITIAL_REQUESTS: MerchantRequest[] = [
   {
@@ -23,6 +31,7 @@ export const INITIAL_REQUESTS: MerchantRequest[] = [
     assignedStaff: 'Nget Monioudom',
     staffId: '222222',
     status: 'New',
+    telegramGroup: '@pos_integration_core',
     isPosTerminalUat: false,
     posTerminalUatStatus: 'Not Applicable',
     posModel: 'IP POS Terminal',
@@ -590,5 +599,124 @@ export function removeStoredCurrentUser() {
     localStorage.setItem(STORAGE_KEY_CURRENT_USER, 'signed_out');
   } catch (err) {
     console.error('Failed to clear current user:', err);
+  }
+}
+
+export const INITIAL_NOTIFICATIONS: GroupNotification[] = [
+  {
+    id: 'NOTIF-101',
+    senderName: 'Seth Daka',
+    senderAvatar: 'SD',
+    senderRole: 'Store Manager',
+    groupName: '@pos_integration_core',
+    message: '@Nget Monioudom Urgent: The Starbucks 313 Quayside installation requires IP dual-homing setup and POS stand today!',
+    timestamp: new Date(Date.now() - 1000 * 60 * 18).toISOString(),
+    isRead: false,
+    isMention: true,
+    keywords: ['POS', 'Installation', 'Urgent'],
+    relatedRequestId: 'REQ-2026-098',
+  },
+  {
+    id: 'NOTIF-102',
+    senderName: 'KIM samart',
+    senderAvatar: 'KS',
+    senderRole: 'POS Specialist',
+    groupName: '@pos_integration_core',
+    message: 'Routine maintenance and firmware update patch deployed for PAX A920 POS terminals across all retail outlets.',
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    isRead: false,
+    isMention: false,
+    keywords: ['POS', 'Maintenance'],
+  },
+  {
+    id: 'NOTIF-103',
+    senderName: 'Operations Supervisor',
+    senderAvatar: 'OS',
+    senderRole: 'Supervisor',
+    groupName: 'Central Intake Desk',
+    message: '@Nget Monioudom Please review the UAT POS terminal return schedule for VB Coffee before 5 PM.',
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+    isRead: false,
+    isMention: true,
+    keywords: ['POS', 'Maintenance'],
+    relatedRequestId: 'REQ-2026-099',
+  },
+  {
+    id: 'NOTIF-104',
+    senderName: 'Marcus Vance',
+    senderAvatar: 'MV',
+    senderRole: 'Hardware Support',
+    groupName: '@cambodia_pos_alerts',
+    message: 'Installation cable kits (RS-232 serial + USB adapters) are stocked in storage cabinet B.',
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 9).toISOString(),
+    isRead: true,
+    isMention: false,
+    keywords: ['Installation'],
+  },
+];
+
+export function detectKeywords(text: string): NotificationKeyword[] {
+  const lower = text.toLowerCase();
+  const keywords: NotificationKeyword[] = [];
+  
+  if (lower.includes('pos') || lower.includes('terminal') || lower.includes('smartpos') || lower.includes('ecr')) {
+    keywords.push('POS');
+  }
+  if (lower.includes('install') || lower.includes('setup') || lower.includes('deploy') || lower.includes('cable') || lower.includes('commissioning')) {
+    keywords.push('Installation');
+  }
+  if (lower.includes('maintain') || lower.includes('maintenance') || lower.includes('repair') || lower.includes('firmware') || lower.includes('patch') || lower.includes('fix')) {
+    keywords.push('Maintenance');
+  }
+  if (lower.includes('urgent') || lower.includes('critical') || lower.includes('asap') || lower.includes('emergency') || lower.includes('alert') || lower.includes('immediately')) {
+    keywords.push('Urgent');
+  }
+  if (keywords.length === 0) {
+    keywords.push('General');
+  }
+  return keywords;
+}
+
+export function checkIsMention(text: string, userName?: string): boolean {
+  if (!userName || !userName.trim()) return false;
+  const lowerText = text.toLowerCase();
+  const lowerName = userName.toLowerCase().trim();
+  
+  if (lowerText.includes(lowerName) || lowerText.includes(`@${lowerName.replace(/\s+/g, '')}`)) {
+    return true;
+  }
+  
+  const parts = lowerName.split(' ').filter((p) => p.length >= 3);
+  for (const part of parts) {
+    if (lowerText.includes(part)) {
+      return true;
+    }
+  }
+  
+  if (lowerText.includes('@here') || lowerText.includes('@all') || lowerText.includes('@everyone')) {
+    return true;
+  }
+  
+  return false;
+}
+
+export function getStoredNotifications(): GroupNotification[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_NOTIFICATIONS);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(INITIAL_NOTIFICATIONS));
+      return INITIAL_NOTIFICATIONS;
+    }
+    return JSON.parse(raw);
+  } catch (err) {
+    return INITIAL_NOTIFICATIONS;
+  }
+}
+
+export function saveStoredNotifications(notifs: GroupNotification[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(notifs));
+  } catch (err) {
+    console.error('Failed to save notifications:', err);
   }
 }

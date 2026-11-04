@@ -39,7 +39,6 @@ export function formatNewRequestTelegramMessage(req: MerchantRequest): string {
 
   return `📞NEW MERCHANT INTEGRATION REQUEST
 
- -Merchant Company : ${req.merchantName}
 -Merchant Outlet: ${req.outletName}
 -POS S/N : ${req.serialNumber}
 ${midLine}
@@ -52,7 +51,9 @@ ${tidLine}
 👨‍💼 Assigned Staff: ${staffStr}
 -Current Status: ${req.status}
 -Remarks: ${remarksStr}
--Logged At: ${loggedTime}`;
+-Logged At: ${loggedTime}
+
+Thank you for your working hard !`;
 }
 
 /**
@@ -78,7 +79,6 @@ export function formatStatusUpdateTelegramMessage(
     : '';
 
   return `MERCHANT INTEGRATION STATUS UPDATE
-Merchant Company: ${req.merchantName}
 Merchant Outlet: ${req.outletName}
 POS S/N: ${req.serialNumber}
 MID / TID: ${req.mid} / ${req.tid}
@@ -90,6 +90,63 @@ Status Transition:
 Remarks: ${log.remarks}
 Updated At: ${updateTime}
 Internal Only`;
+}
+
+/**
+ * Format notification for POS Terminal UAT Loan & Return Notice
+ */
+export function formatUatTerminalNoticeMessage(req: MerchantRequest): string {
+  const staffStr = req.staffId
+    ? `${req.assignedStaff} (Staff ID: ${req.staffId})`
+    : req.assignedStaff;
+
+  const returnDate = req.uatExpectedReturnDate || 'To be scheduled';
+  const loanDate = req.uatLoanDate || new Date(req.createdAt).toISOString().split('T')[0];
+
+  return `💳 POS TERMINAL UAT LOAN / RETURN NOTICE
+
+- Merchant Outlet: ${req.outletName}
+- POS Model: ${req.posModel || 'Standard POS'}
+- Serial Number (S/N): ${req.serialNumber}
+- Integration Type: ${req.integrationType}
+- UAT Loan Date: ${loanDate}
+- Expected Return Date: ${returnDate}
+- Current UAT Status: ${req.posTerminalUatStatus || 'Pending Return'}
+👨‍💼 Assigned Staff: ${staffStr}
+- Remarks: ${req.remarks || 'POS Terminal assigned for test loan / UAT verification.'}
+
+Please return the testing terminal on or before the expected date.`;
+}
+
+/**
+ * Format notification for Daily Operations Summary
+ */
+export function formatDailySummaryMessage(requests: MerchantRequest[]): string {
+  const total = requests.length;
+  const newCount = requests.filter((r) => r.status === 'New').length;
+  const inProgress = requests.filter((r) =>
+    ['Pending', 'In Progress', 'Testing'].includes(r.status)
+  ).length;
+  const completed = requests.filter((r) => r.status === 'Completed').length;
+  const uatPending = requests.filter(
+    (r) => r.isPosTerminalUat && r.posTerminalUatStatus === 'Pending Return'
+  ).length;
+
+  const todayStr = new Date().toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  return `📊 MERCHANT INTEGRATION DAILY DIGEST (${todayStr})
+
+- Total Active Requests: ${total}
+- 🆕 New Intakes: ${newCount}
+- ⚙️ In Progress / Testing: ${inProgress}
+- ✅ Successfully Completed: ${completed}
+- 💳 UAT Terminals Out on Loan: ${uatPending}
+
+Operation Office · Merchant Support Team`;
 }
 
 /**

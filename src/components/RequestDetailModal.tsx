@@ -1,7 +1,29 @@
-import React from 'react';
-import { X, Clock, Calendar, User, Phone, MapPin, Tag, RefreshCw, Send, FileSpreadsheet, ExternalLink } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+  X, 
+  Clock, 
+  Calendar, 
+  User, 
+  Phone, 
+  MapPin, 
+  Tag, 
+  RefreshCw, 
+  Send, 
+  FileSpreadsheet, 
+  ExternalLink,
+  Copy,
+  Check,
+  MessageSquare,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react';
 import { MerchantRequest, TelegramConfig } from '../types';
-import { formatNewRequestTelegramMessage, sendTelegramMessage } from '../utils/telegram';
+import { 
+  formatNewRequestTelegramMessage, 
+  formatStatusUpdateTelegramMessage,
+  formatUatTerminalNoticeMessage,
+  sendTelegramMessage 
+} from '../utils/telegram';
 import { appendTelegramLog } from '../utils/storage';
 
 interface RequestDetailModalProps {
@@ -19,18 +41,78 @@ export const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
   onOpenStatusUpdate,
   telegramConfig,
 }) => {
+  const [showMsgPreview, setShowMsgPreview] = useState(false);
+  const [formatType, setFormatType] = useState<'new_request' | 'status_update' | 'uat_notice'>('new_request');
+  const [copied, setCopied] = useState(false);
+  const [sendResult, setSendResult] = useState<{ success: boolean; msg: string } | null>(null);
+  const [isSending, setIsSending] = useState(false);
+
   if (!isOpen || !request) return null;
 
+  const getFormattedMessage = () => {
+    switch (formatType) {
+      case 'new_request':
+        return formatNewRequestTelegramMessage(request);
+      case 'status_update': {
+        const latestLog = request.statusLogs?.[0] || {
+          id: `LOG-${request.id}`,
+          previousStatus: 'New',
+          newStatus: request.status,
+          person: request.assignedStaff,
+          staffId: request.staffId,
+          timestamp: request.updatedAt,
+          remarks: request.remarks || 'Status verification update',
+        };
+        return formatStatusUpdateTelegramMessage(request, latestLog);
+      }
+      case 'uat_notice':
+        return formatUatTerminalNoticeMessage(request);
+      default:
+        return formatNewRequestTelegramMessage(request);
+    }
+  };
+
+  const handleCopyMessage = () => {
+    const text = getFormattedMessage();
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleResendTelegram = async () => {
-    const msg = formatNewRequestTelegramMessage(request);
+    setIsSending(true);
+    setSendResult(null);
+
+    const targetConfig = {
+      ...telegramConfig,
+      chatIdOrUsername: request.telegramGroup || telegramConfig.chatIdOrUsername,
+    };
+    const msg = getFormattedMessage();
     const res = await sendTelegramMessage(
-      telegramConfig,
+      targetConfig,
       msg,
       'Manual Resend',
-      `Manual Telegram dispatch: ${request.merchantName} (${request.id})`
+      `Manual Telegram dispatch: ${request.merchantName} (${request.id}) -> ${targetConfig.chatIdOrUsername || 'Default'}`
     );
     appendTelegramLog(res.log);
-    alert(res.success ? 'Message sent to Telegram successfully!' : `Telegram notification result: ${res.error || 'Simulated in demo log'}`);
+    setIsSending(false);
+
+    if (res.success && res.log.status === 'Sent') {
+      setSendResult({
+        success: true,
+        msg: `Message delivered to ${targetConfig.chatIdOrUsername || 'Telegram'}!`,
+      });
+    } else if (res.log.status === 'Simulated') {
+      setSendResult({
+        success: true,
+        msg: `Demo simulated delivery recorded in Telegram log.`,
+      });
+    } else {
+      setSendResult({
+        success: false,
+        msg: res.error || 'Failed to dispatch to Telegram API.',
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -53,38 +135,39 @@ export const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-      <div 
-        className="bg-[#19191d] rounded-xl shadow-2xl border border-[rgba(240,240,242,0.12)] max-w-3xl w-full overflow-hidden my-8 text-[#f0f0f2]"
-        role="dialog"
-        aria-modal="true"
-      >
-        {/* Header */}
-        <div className="px-6 py-4 flex items-center justify-between bg-[#0f0f11] border-b border-[rgba(240,240,242,0.08)]">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs px-2 py-0.5 bg-white/10 rounded font-semibold text-[#2ecc71]">
-                {request.id}
-              </span>
-              <h2 className="font-display text-lg uppercase tracking-wider font-semibold text-[#f0f0f2]">
-                {request.merchantName}
-              </h2>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-xs p-2 sm:p-4 overscroll-contain">
+      <div className="min-h-full flex items-center justify-center py-4 sm:py-8">
+        <div 
+          className="bg-[#19191d] rounded-xl shadow-2xl border border-[rgba(240,240,242,0.12)] max-w-3xl w-full overflow-hidden text-[#f0f0f2] flex flex-col max-h-[92vh] sm:max-h-[88vh]"
+          role="dialog"
+          aria-modal="true"
+        >
+          {/* Header */}
+          <div className="px-4 sm:px-6 py-4 flex items-center justify-between bg-[#0f0f11] border-b border-[rgba(240,240,242,0.08)] shrink-0">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs px-2 py-0.5 bg-white/10 rounded font-semibold text-[#2ecc71]">
+                  {request.id}
+                </span>
+                <h2 className="font-display text-base sm:text-lg uppercase tracking-wider font-semibold text-[#f0f0f2]">
+                  {request.merchantName}
+                </h2>
+              </div>
+              <p className="text-[11px] sm:text-xs font-mono text-[rgba(240,240,242,0.5)] mt-0.5">
+                Outlet: {request.outletName} · Serial: {request.serialNumber}
+              </p>
             </div>
-            <p className="text-xs font-mono text-[rgba(240,240,242,0.5)] mt-0.5">
-              Outlet: {request.outletName} · Serial: {request.serialNumber}
-            </p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-[rgba(240,240,242,0.6)] hover:text-white p-1 rounded-md transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-[rgba(240,240,242,0.6)] hover:text-white p-1 rounded-md transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        {/* Body */}
-        <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+          {/* Body */}
+          <div className="p-4 sm:p-6 space-y-6 overflow-y-auto overscroll-contain flex-1">
           {/* Top Status & Fast Action Bar */}
           <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-[#0f0f11] rounded-lg border border-[rgba(240,240,242,0.08)]">
             <div className="flex items-center gap-3">
@@ -103,15 +186,29 @@ export const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setShowMsgPreview((prev) => !prev)}
+                className={`btn-action-secondary text-xs flex items-center gap-1.5 ${
+                  showMsgPreview ? 'border-[#2ecc71] text-[#2ecc71] bg-white/5' : ''
+                }`}
+                title="Preview Telegram Message & Manual Copy"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Message Preview</span>
+              </button>
+
               <button
                 type="button"
                 onClick={handleResendTelegram}
+                disabled={isSending}
                 className="btn-action-secondary text-xs flex items-center gap-1.5"
               >
                 <Send className="w-3.5 h-3.5 text-[#2ecc71]" />
-                <span>Send to Telegram</span>
+                <span>{isSending ? 'Sending...' : 'Send to Telegram'}</span>
               </button>
+
               <button
                 type="button"
                 onClick={() => {
@@ -125,6 +222,95 @@ export const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Delivery result banner */}
+          {sendResult && (
+            <div
+              className={`p-3 rounded-lg border text-xs flex items-center gap-2 ${
+                sendResult.success
+                  ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400'
+                  : 'bg-rose-950/40 border-rose-500/40 text-rose-400'
+              }`}
+            >
+              {sendResult.success ? (
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 shrink-0" />
+              )}
+              <span>{sendResult.msg}</span>
+            </div>
+          )}
+
+          {/* Expandable Message Format Preview */}
+          {showMsgPreview && (
+            <div className="bg-[#0f0f11] border border-[rgba(240,240,242,0.12)] rounded-xl p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-mono text-[rgba(240,240,242,0.5)]">FORMAT:</span>
+                  <div className="flex rounded-lg bg-[#19191d] p-0.5 border border-[rgba(240,240,242,0.08)]">
+                    <button
+                      type="button"
+                      onClick={() => setFormatType('new_request')}
+                      className={`px-2.5 py-1 text-[11px] font-mono rounded transition-colors ${
+                        formatType === 'new_request'
+                          ? 'bg-[#2ecc71]/20 text-[#2ecc71] font-bold'
+                          : 'text-[rgba(240,240,242,0.6)] hover:text-[#f0f0f2]'
+                      }`}
+                    >
+                      📞 New Request
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormatType('status_update')}
+                      className={`px-2.5 py-1 text-[11px] font-mono rounded transition-colors ${
+                        formatType === 'status_update'
+                          ? 'bg-[#2ecc71]/20 text-[#2ecc71] font-bold'
+                          : 'text-[rgba(240,240,242,0.6)] hover:text-[#f0f0f2]'
+                      }`}
+                    >
+                      🔄 Status Update
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormatType('uat_notice')}
+                      className={`px-2.5 py-1 text-[11px] font-mono rounded transition-colors ${
+                        formatType === 'uat_notice'
+                          ? 'bg-[#2ecc71]/20 text-[#2ecc71] font-bold'
+                          : 'text-[rgba(240,240,242,0.6)] hover:text-[#f0f0f2]'
+                      }`}
+                    >
+                      💳 UAT Notice
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCopyMessage}
+                    className="px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-xs font-mono text-[#2ecc71] flex items-center gap-1 border border-white/10 transition-colors"
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copied ? 'Copied!' : 'Copy to Clipboard (Manual Paste)'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleResendTelegram}
+                    disabled={isSending}
+                    className="btn-action-primary text-xs py-1 px-2.5 flex items-center gap-1"
+                  >
+                    <Send className="w-3 h-3" />
+                    <span>Send This Format</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-[#19191d] text-[#f0f0f2] font-mono text-xs p-3.5 rounded-lg overflow-x-auto whitespace-pre-wrap leading-relaxed border border-[rgba(240,240,242,0.08)] select-all shadow-inner">
+                {getFormattedMessage()}
+              </div>
+            </div>
+          )}
 
           {/* Grid Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -151,6 +337,12 @@ export const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                   <span className="text-[rgba(240,240,242,0.5)]">Integration Type:</span>
                   <span className="text-[#2ecc71] font-semibold">{request.integrationType}</span>
                 </div>
+                {request.telegramGroup && (
+                  <div className="flex justify-between py-1 border-b border-[rgba(240,240,242,0.06)]">
+                    <span className="text-[rgba(240,240,242,0.5)]">Telegram Group:</span>
+                    <span className="text-[#2ecc71] font-semibold">{request.telegramGroup}</span>
+                  </div>
+                )}
                 <div className="flex justify-between py-1">
                   <span className="text-[rgba(240,240,242,0.5)]">Merchant Business:</span>
                   <span className="text-[#f0f0f2]">{request.businessType}</span>
@@ -278,7 +470,7 @@ export const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 bg-[#0f0f11] border-t border-[rgba(240,240,242,0.08)] flex justify-end">
+        <div className="px-6 py-3 bg-[#0f0f11] border-t border-[rgba(240,240,242,0.08)] flex justify-end shrink-0">
           <button
             type="button"
             onClick={onClose}
@@ -289,5 +481,6 @@ export const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };
